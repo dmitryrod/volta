@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div id="c" style="width:400px;height:200px"></div>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+try {
+  const c = LightweightCharts.createChart(document.getElementById("c"), { width: 400, height: 200 });
+  c.priceScale("right").applyOptions({ autoScale: false });
+  c.priceScale("right").setVisibleRange({ from: 0, to: 100 });
+  document.body.insertAdjacentHTML("beforeend", "<p id=r>OK empty setVisibleRange</p>");
+} catch (e) {
+  document.body.insertAdjacentHTML("beforeend", "<p id=r>ERR: " + e.message + "</p>");
+}
+</script>
+</body>
+</html>

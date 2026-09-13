@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chart — Volta</title>
+  <link rel="stylesheet" href="/static/css/panel.css">
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <header class="toolbar">
+    <div class="toolbar-left">
+      <h1 class="brand brand-title">Volta</h1>
+      <nav class="asset-tabs" id="asset-tabs">
+        <button type="button" data-base="BTC" class="active">BTC</button>
+        <button type="button" data-base="ETH">ETH</button>
+        <button type="button" data-base="SOL">SOL</button>
+      </nav>
+    </div>
+    <div class="toolbar-center">
+      <nav class="tf-tabs" id="tf-tabs">
+        <button type="button" data-interval="1m">1m</button>
+        <button type="button" data-interval="5m" class="active">5m</button>
+        <button type="button" data-interval="15m">15m</button>
+        <button type="button" data-interval="1h">1h</button>
+        <button type="button" data-interval="4h">4h</button>
+        <button type="button" data-interval="1d">1d</button>
+      </nav>
+    </div>
+    <div class="toolbar-right">
+      <label class="toggle"><input type="checkbox" id="toggle-futures" checked> Futures</label>
+      <div class="options-dropdown" id="options-dropdown">
+        <button type="button" id="options-menu-btn" class="options-menu-btn">Options</button>
+        <div class="options-panel hidden" id="options-panel">
+          <div class="options-panel-header" id="options-expiry-label">Expiry</div>
+          <div class="options-columns">
+            <div class="options-col calls" id="options-calls-list"></div>
+            <div class="options-col puts" id="options-puts-list"></div>
+          </div>
+        </div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="toggle-options" checked> Options</label>
+      <div class="options-dropdown pm-dropdown" id="pm-dropdown">
+        <button type="button" id="pm-menu-btn" class="options-menu-btn">Polymarket</button>
+        <div class="options-panel pm-panel hidden" id="pm-panel">
+          <div class="pm-panel-import">
+            <textarea
+              id="pm-urls-import"
+              rows="3"
+              placeholder="Paste Polymarket event URLs (one per line)"
+              spellcheck="false"
+            ></textarea>
+            <button type="button" id="pm-import-btn">Import</button>
+          </div>
+          <div class="pm-panel-list" id="pm-events-list"></div>
+        </div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="toggle-pm" checked> Polymarket</label>
+      <form method="post" action="/logout" class="logout-form">
+        <button type="submit">Logout</button>
+      </form>
+    </div>
+  </header>
+
+  <div class="legend-row">
+    <div class="legend" id="legend">Loading...</div>
+    <span id="pm-expiry-countdown" class="pm-expiry-countdown hidden" aria-live="polite"></span>
+  </div>
+
+  <div class="chart-container">
+    <div class="chart-main">
+      <ul id="pm-strike-labels" class="pm-strike-labels" aria-label="Polymarket strike levels"></ul>
+      <div id="chart-prices" class="chart-pane"></div>
+    </div>
+    <div id="chart-tooltip" class="chart-tooltip hidden" aria-hidden="true"></div>
+  </div>
+
+  <script src="/static/js/chart.js?v=11"></script>
+</body>
+</html>
