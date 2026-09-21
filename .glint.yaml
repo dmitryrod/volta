@@ -1,0 +1,56 @@
+# Glint configuration
+# See: https://github.com/aiseeq/glint
+
+version: 1
+
+settings:
+  exclude:
+    - .alembic/**
+    - .backups/**
+    - .github/**
+    - .vscode/**
+    - .idea/**
+    - .DS_Store
+    - .venv
+    - .env
+    - .env.local
+    - .env.development.local
+    - .env.test.local
+    - vendor/**
+    - node_modules/**
+    - "**/*_test.go"
+  min_severity: medium
+  output: console
+
+categories:
+  architecture:
+    enabled: true
+  deadcode:
+    enabled: true
+  documentation:
+    enabled: true
+  duplication:
+    enabled: true
+  naming:
+    enabled: true
+  patterns:
+    enabled: true
+    rules:
+      error-masking:
+        severity: critical
+        exceptions:
+          - files: "**/config/**"
+            reason: "Конфигурационные дефолты допустимы"
+      todo-comment:
+        enabled: false
+  security:
+    enabled: true
+  typesafety:
+    enabled: true
+
+duplication:
+  rules:
+    cross-file-duplicate:
+      exceptions:
+        - files: "backups/**"
+          reason: "Бэкапы дублируют основной код намеренно"
