@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+{#-
+  Переопределяет starlette_admin/templates/base.html (ChoiceLoader: app/admin/templates первым).
+  В апстриме: @import url('https://rsms.me/inter/inter.css') — при ERR_CONNECTION_* браузер
+  ждёт таймаут десятки секунд; stylesheet блокирует первую отрисовку (NO_FCP в Lighthouse).
+  Шрифт: системный стек, без внешних запросов (см. app/docs/DESIGN.md — Tabler/system).
+-#}
+<html lang="{{ get_locale() }}" data-bs-theme="dark">
+<head>
+    <script>
+    (function () {
+        try {
+            var k = "mp_admin_color_scheme";
+            var v = localStorage.getItem(k);
+            if (v === "light") {
+                document.documentElement.setAttribute("data-bs-theme", "light");
+            } else {
+                document.documentElement.setAttribute("data-bs-theme", "dark");
+            }
+        } catch (e) {
+            document.documentElement.setAttribute("data-bs-theme", "dark");
+        }
+    })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    {% if favicon_url %}
+        <link rel="icon" type="image/x-icon" href="{{ favicon_url }}"/>
+    {% endif %}
+    {% block head_meta %}{% endblock %}
+    {% block title %}<title>{{ title or app_title }}</title>{% endblock %}
+    <link rel="stylesheet" href="{{ url_for(__name__ ~ ':statics', path='css/tabler.min-1.1.0.css') }}">
+    <link rel="stylesheet" href="{{ url_for(__name__ ~ ':statics', path='css/fontawesome.min.css') }}">
+    <style>
+        [data-bs-theme="dark"] {
+            --mp-shell-bg: #0f172a;
+            --bs-body-bg: #0f172a;
+            --bs-body-color: #e2e8f0;
+            --tblr-body-bg: #0f172a;
+            /* Семантика MP (jinja-страницы + DataTables) */
+            --mp-c-surface: #1a1f2e;
+            --mp-c-surface-2: #1e2538;
+            --mp-c-raised: #232a3e;
+            --mp-c-raised-focus: #2a334d;
+            --mp-c-border: #2d3550;
+            --mp-c-border-focus: #3a5bbf;
+            --mp-c-text: #e0e6f0;
+            --mp-c-text-bright: #f8fafc;
+            --mp-c-text-muted: #8899bb;
+            --mp-c-text-soft: #c0ccdd;
+            --mp-c-hint: #6677aa;
+            --mp-c-link: #5b9cf6;
+            --mp-cat-active-bg: #2e4a2e;
+            --mp-cat-active-fg: #8fdf8f;
+            --mp-cat-done-bg: #2d3550;
+            --mp-cat-done-fg: #aab8d0;
+            --mp-cat-err-bg: #3d2a2a;
+            --mp-cat-err-fg: #e0a0a0;
+            --mp-purge-border: #6a4040;
+            --mp-purge-bg: #3d2a2a;
+            --mp-purge-fg: #e8b4b4;
+            --mp-purge-hover: #4a3030;
+            --mp-signal-tab-active: #3a5bbf;
+            --mp-signal-pill-ok: #2d3a5e;
+            --mp-signal-pill-err: #3a2626;
+            --mp-signal-row-alt: #243050;
+            --mp-signal-connecting: #2d3a5e;
+            --mp-signal-empty: #6677aa;
+            --mp-chart-tick: #94a3b8;
+            --mp-chart-grid: rgba(148, 163, 184, 0.22);
+            --mp-events-text: #9aa8c4;
+            --mp-err: #e57373;
+            --mp-metr-stale-fg: #fdcb6e;
+            --mp-logs-bg: #1e1e1e;
+            --mp-logs-fg: #d4d4d4;
+            --mp-logs-hl-bg: #f9ca24;
+            --mp-logs-hl-fg: #2d3436;
+            --mp-logs-count: #636e72;
+            --mp-accent: #f5c518;
+            --mp-sound-on: #4caf50;
+            --mp-sound-off: #f44336;
+            --mp-sound-warn: #ff9800;
+            --mp-form-invalid: #d63939;
+            --mp-filter-enabled: #2fb344;
+            --mp-filter-muted: #9aa0ac;
+        }
+
+        [data-bs-theme="light"] {
+            --mp-shell-bg: #f1f5f9;
+            --bs-body-bg: #f1f5f9;
+            --bs-body-color: #0f172a;
+            --tblr-body-bg: #f1f5f9;
+            --mp-c-surface: #f8fafc;
+            --mp-c-surface-2: #f1f5f9;
+            --mp-c-raised: #ffffff;
+            --mp-c-raised-focus: #e8eef7;
+            --mp-c-border: #e2e8f0;
+            --mp-c-border-focus: #2563eb;
+            --mp-c-text: #0f172a;
+            --mp-c-text-bright: #020617;
+            --mp-c-text-muted: #64748b;
+            --mp-c-text-soft: #475569;
+            --mp-c-hint: #64748b;
+            --mp-c-link: #2563eb;
+            --mp-cat-active-bg: #dcfce7;
+            --mp-cat-active-fg: #166534;
+            --mp-cat-done-bg: #e2e8f0;
+            --mp-cat-done-fg: #475569;
+            --mp-cat-err-bg: #fee2e2;
+            --mp-cat-err-fg: #991b1b;
+            --mp-purge-border: #fecaca;
+            --mp-purge-bg: #fee2e2;
+            --mp-purge-fg: #b91c1c;
+            --mp-purge-hover: #fecaca;
+            --mp-signal-tab-active: #2563eb;
+            --mp-signal-pill-ok: #e0e7ff;
+            --mp-signal-pill-err: #fee2e2;
+            --mp-signal-row-alt: #f1f5f9;
+            --mp-signal-connecting: #e0e7ff;
+            --mp-signal-empty: #64748b;
+            --mp-chart-tick: #64748b;
+            --mp-chart-grid: rgba(100, 116, 139, 0.22);
+            --mp-events-text: #475569;
+            --mp-err: #b91c1c;
+            --mp-metr-stale-fg: #b45309;
+            --mp-logs-bg: #ffffff;
+            --mp-logs-fg: #0f172a;
+            --mp-logs-hl-bg: #fde047;
+            --mp-logs-hl-fg: #0f172a;
+            --mp-logs-count: #64748b;
+            --mp-accent: #d97706;
+            --mp-sound-on: #16a34a;
+            --mp-sound-off: #dc2626;
+            --mp-sound-warn: #d97706;
+            --mp-form-invalid: #dc2626;
+            --mp-filter-enabled: #16a34a;
+            --mp-filter-muted: #64748b;
+        }
+
+        :root {
+            --tblr-font-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* Единый холст: viewport, page shell, main */
+        html,
+        body {
+            min-height: 100%;
+            background-color: var(--mp-shell-bg) !important;
+        }
+
+        .page,
+        .page-wrapper,
+        .page-body {
+            background-color: var(--mp-shell-bg) !important;
+        }
+
+        .page-wrapper > .container-fluid,
+        .page-body > .container-fluid {
+            background-color: transparent;
+        }
+
+        [data-bs-theme="dark"] .page > header.navbar:not(.navbar-vertical) {
+            background-color: var(--mp-shell-bg) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        [data-bs-theme="light"] .page > header.navbar:not(.navbar-vertical) {
+            background-color: var(--mp-shell-bg) !important;
+            border-color: rgba(15, 23, 42, 0.1) !important;
+        }
+
+        body {
+            font-feature-settings: "cv03", "cv04", "cv11";
+        }
+
+        .navbar-logo {
+            width: auto;
+            height: 2rem;
+        }
+    </style>
+    {% block head_css %}{% endblock %}
+</head>
+
+<body>
+{% block body %}{% endblock %}
+{% block modal %}{% endblock %}
+<script type="text/javascript" src="{{ url_for(__name__ ~ ':statics', path='js/vendor/jquery.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for(__name__ ~ ':statics', path='js/vendor/js.cookie.min.js') }}"></script>
+<script type="text/javascript"
+        src="{{ url_for(__name__ ~ ':statics', path='js/vendor/tabler.min-1.1.0.js') }}"></script>
+{% block script %}{% endblock %}
+<script>
+    $(function () {
+        $(".language-switcher-item").each(function () {
+            let el = $(this);
+            el.on("click", function () {
+                Cookies.set(String(el.data("cookie-name")), String(el.data("lang")));
+                window.location.reload();
+            });
+        });
+
+        $(".timezone-switcher-item").each(function () {
+            let el = $(this);
+            el.on("click", function () {
+                Cookies.set(String(el.data("cookie-name")), String(el.data("tz")));
+                window.location.reload();
+            });
+        });
+
+        {% if timezone_config and timezone_config.use_user_locale_timezone %}
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (!Cookies.get('timezone') && timezone) {
+            Cookies.set('timezone', timezone);
+        }
+        {% endif %}
+    });
+</script>
+</body>
+
+</html>

@@ -1,0 +1,491 @@
+{% extends "layout.html" %}
+{% block title %}<title>Обзор</title>{% endblock %}
+{% block content %}{{ super() }}
+
+<style>
+  .page-title { display: none !important; }
+  .page-header { display: none !important; }
+
+  .mp-dash-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 8px 16px 48px;
+  }
+
+  .mp-dash-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .mp-dash-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--mp-c-text, #e0e6f0);
+    margin: 0;
+  }
+
+  .mp-dash-updated {
+    font-size: 0.75rem;
+    color: var(--mp-c-text-muted, #8899bb);
+    text-align: right;
+    width: 100%;
+    margin: 0 0 8px;
+  }
+
+  .mp-dash-stale {
+    font-size: 0.8rem;
+    color: #fdcb6e;
+    background: color-mix(in srgb, #fdcb6e 12%, transparent);
+    border: 1px solid color-mix(in srgb, #fdcb6e 35%, transparent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    display: none;
+  }
+  .mp-dash-stale.is-visible { display: inline-block; }
+
+  .mp-dash-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .mp-dash-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--mp-c-border, #2d3550);
+    background: linear-gradient(135deg, var(--mp-c-surface, #1a1f2e) 0%, var(--mp-c-surface-2, #171c28) 100%);
+    color: var(--mp-c-link, #5b9cf6);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .mp-dash-link:hover {
+    border-color: color-mix(in srgb, var(--mp-c-link, #5b9cf6) 55%, var(--mp-c-border, #2d3550));
+    transform: translateY(-1px);
+    color: var(--mp-c-link, #7eb6ff);
+  }
+  .mp-dash-link:focus-visible {
+    outline: 2px solid var(--mp-c-link, #5b9cf6);
+    outline-offset: 2px;
+  }
+
+  .mp-dash-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: stretch;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 840px) {
+    .mp-dash-grid { grid-template-columns: 1fr; }
+  }
+
+  .mp-dash-panel {
+    padding: 18px 20px;
+    background: linear-gradient(135deg, var(--mp-c-surface, #1a1f2e) 0%, var(--mp-c-surface-2, #171c28) 100%);
+    border: 1px solid var(--mp-c-border, #2d3550);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+    color: var(--mp-c-text, #e0e6f0);
+  }
+
+  .mp-dash-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .mp-dash-panel h2 {
+    font-size: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mp-c-text-muted, #8899bb);
+    margin: 0;
+  }
+
+  .mp-dash-panel a.more {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mp-c-link, #5b9cf6);
+    text-decoration: none;
+  }
+  .mp-dash-panel a.more:hover { text-decoration: underline; }
+
+  .mp-dash-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 10px;
+  }
+
+  .mp-dash-kpi {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--mp-c-raised, #232a3e) 72%, transparent);
+    border: 1px solid color-mix(in srgb, var(--mp-c-border, #2d3550) 85%, transparent);
+  }
+
+  .mp-dash-kpi label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mp-c-text-muted, #8899bb);
+    margin-bottom: 4px;
+  }
+
+  /* Секция «Сигналы»: 4 KPI, длинная подпись «TG ошибки 24 ч» — одна строка на типичной ширине */
+  .mp-dash-kpis--signals {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+  .mp-dash-kpis--signals .mp-dash-kpi label {
+    white-space: nowrap;
+    font-size: 10.5px;
+    letter-spacing: 0.035em;
+  }
+  @media (max-width: 480px) {
+    .mp-dash-kpis--signals {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .mp-dash-kpis--signals .mp-dash-kpi label {
+      white-space: normal;
+    }
+  }
+
+  .mp-dash-kpi span.val {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--mp-c-text, #e0e6f0);
+    line-height: 1.1;
+  }
+
+  .mp-dash-progress {
+    height: 5px;
+    border-radius: 999px;
+    background: var(--mp-c-raised, #232a3e);
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .mp-dash-progress > i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #5b7cfa, #3a5bbf);
+  }
+  .mp-dash-progress > i.warn { background: linear-gradient(90deg, #ffeaa7, #fdcb6e); }
+  .mp-dash-progress > i.danger { background: linear-gradient(90deg, #ff7675, #d63031); }
+
+  .mp-dash-runtime-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .mp-dash-runtime-table td {
+    padding: 6px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--mp-c-border, #2d3550) 70%, transparent);
+  }
+  .mp-dash-runtime-table td:first-child {
+    color: var(--mp-c-text-muted, #8899bb);
+    width: 56%;
+  }
+
+  .mp-dash-status-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .mp-dash-status-pills span {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mp-c-raised, #232a3e) 85%, transparent);
+    border: 1px solid var(--mp-c-border, #2d3550);
+    color: var(--mp-c-text-soft, #aab8d0);
+  }
+
+  .mp-dash-metr-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  @media (max-width: 520px) {
+    .mp-dash-metr-row { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="mp-dash-wrap">
+  <div class="mp-dash-header">
+    <h1 class="mp-dash-title">Обзор</h1>
+    <span id="mp-dash-stale" class="mp-dash-stale" aria-live="polite">Данные метрик устарели</span>
+  </div>
+  <p id="mp-dash-cache-badge" class="mp-dash-cache-badge" style="display:none;font-size:0.75rem;color:var(--mp-c-text-muted,#8899bb);margin:0 0 6px;" role="status">
+    Показаны данные из сохранённого сеанса браузера — обновлю после ответа сервера…
+  </p>
+  <p id="mp-dash-updated" class="mp-dash-updated"></p>
+
+  <nav class="mp-dash-links" aria-label="Быстрые разделы">
+    <a class="mp-dash-link" href="/admin/screeners/list">Скринеры</a>
+    <a class="mp-dash-link" href="/admin/signals">Сигналы</a>
+    <a class="mp-dash-link" href="/admin/analytics">Аналитика</a>
+    <a class="mp-dash-link" href="/admin/monitoring">Система</a>
+    <a class="mp-dash-link" href="/admin/logs">Логи</a>
+    <a class="mp-dash-link" href="/admin/settings">Настройки</a>
+  </nav>
+
+  <div class="mp-dash-grid">
+    <section class="mp-dash-panel" aria-labelledby="dash-sys-head">
+      <div class="mp-dash-panel-head">
+        <h2 id="dash-sys-head">Система</h2>
+        <a class="more" href="/admin/monitoring">Подробнее →</a>
+      </div>
+      <div class="mp-dash-metr-row">
+        <div class="mp-dash-kpi">
+          <label>CPU</label>
+          <span class="val" id="dash-cpu">—</span>
+          <div class="mp-dash-progress"><i id="dash-bar-cpu"></i></div>
+        </div>
+        <div class="mp-dash-kpi">
+          <label>RAM</label>
+          <span class="val" id="dash-mem">—</span>
+          <div class="mp-dash-progress"><i id="dash-bar-mem"></i></div>
+        </div>
+        <div class="mp-dash-kpi">
+          <label>Диск</label>
+          <span class="val" id="dash-disk">—</span>
+          <div class="mp-dash-progress"><i id="dash-bar-disk"></i></div>
+        </div>
+      </div>
+      <div class="mp-dash-kpi" style="margin-top:12px;">
+        <label>Размер каталога app</label>
+        <span class="val" id="dash-appdir" style="font-size:18px;">—</span>
+      </div>
+    </section>
+
+    <section class="mp-dash-panel" aria-labelledby="dash-sc-head">
+      <div class="mp-dash-panel-head">
+        <h2 id="dash-sc-head">Скринеры</h2>
+        <a class="more" href="/admin/screeners/list">Подробнее →</a>
+      </div>
+      <div class="mp-dash-kpis">
+        <div class="mp-dash-kpi">
+          <label>Всего</label>
+          <span class="val" id="dash-sc-total">0</span>
+        </div>
+        <div class="mp-dash-kpi">
+          <label>Включено</label>
+          <span class="val" id="dash-sc-on">0</span>
+        </div>
+        <div class="mp-dash-kpi">
+          <label>Отладка</label>
+          <span class="val" id="dash-sc-debug">0</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="mp-dash-grid">
+    <section class="mp-dash-panel" aria-labelledby="dash-sig-head">
+      <div class="mp-dash-panel-head">
+        <h2 id="dash-sig-head">Сигналы</h2>
+        <a class="more" href="/admin/signals">Подробнее →</a>
+      </div>
+      <div class="mp-dash-kpis mp-dash-kpis--signals">
+        <div class="mp-dash-kpi">
+          <label>В БД всего</label>
+          <span class="val" id="dash-sig-total">0</span>
+        </div>
+        <div class="mp-dash-kpi">
+          <label>За 24 ч</label>
+          <span class="val" id="dash-sig-24">0</span>
+        </div>
+        <div class="mp-dash-kpi">
+          <label>TG OK 24 ч</label>
+          <span class="val" id="dash-sig-ok">0</span>
+        </div>
+        <div class="mp-dash-kpi">
+          <label>TG ошибки 24 ч</label>
+          <span class="val" id="dash-sig-fail">0</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="mp-dash-panel" aria-labelledby="dash-an-head">
+      <div class="mp-dash-panel-head">
+        <h2 id="dash-an-head">Аналитика Scanner</h2>
+        <a class="more" href="/admin/analytics">Подробнее →</a>
+      </div>
+      <div class="mp-dash-kpis">
+        <div class="mp-dash-kpi">
+          <label>Сессий в БД</label>
+          <span class="val" id="dash-an-total">0</span>
+        </div>
+      </div>
+      <div id="dash-status-pills" class="mp-dash-status-pills"></div>
+      <table class="mp-dash-runtime-table" style="margin-top:12px;">
+        <tbody>
+          <tr><td>max_cards</td><td id="dash-rt-cards">—</td></tr>
+          <tr><td>posttracking, мин</td><td id="dash-rt-post">—</td></tr>
+          <tr><td>cooldown, ч</td><td id="dash-rt-cd">—</td></tr>
+          <tr><td>Статистика вкл.</td><td id="dash-rt-stat">—</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>
+
+<script type="application/json" id="mp-dash-initial">{{ dashboard_initial | tojson }}</script>
+<script>
+(function () {
+  const URL = "/admin_api/dashboard/summary";
+  var CACHE_KEY = "mp_admin_dashboard_summary_v1";
+
+  function formatBytes(n) {
+    if (n == null || !Number.isFinite(Number(n))) return "—";
+    let v = Number(n);
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let i = 0;
+    while (v >= 1024 && i < units.length - 1) {
+      v /= 1024;
+      i++;
+    }
+    if (i === 0) return Math.round(v) + " " + units[i];
+    return v.toFixed(2) + " " + units[i];
+  }
+
+  function setBar(el, pct) {
+    if (!el) return;
+    const p = Math.max(0, Math.min(100, Number(pct) || 0));
+    el.style.width = p + "%";
+    el.classList.remove("warn", "danger");
+    if (p >= 90) el.classList.add("danger");
+    else if (p >= 70) el.classList.add("warn");
+  }
+
+  function showCacheBadge(show) {
+    var el = document.getElementById("mp-dash-cache-badge");
+    if (el) el.style.display = show ? "block" : "none";
+  }
+
+  function render(data) {
+    const mon = data.monitoring || {};
+    const staleEl = document.getElementById("mp-dash-stale");
+    if (mon.stale) staleEl.classList.add("is-visible");
+    else staleEl.classList.remove("is-visible");
+
+    const upd = document.getElementById("mp-dash-updated");
+    if (upd && typeof window.MpAdminTime !== "undefined" && mon.server_time) {
+      upd.textContent =
+        "Обновлено: " +
+        window.MpAdminTime.formatDateTime(new Date(mon.server_time * 1000).toISOString());
+    } else if (upd && mon.server_time) {
+      upd.textContent = "Обновлено: " + new Date(mon.server_time * 1000).toLocaleString();
+    }
+
+    if (mon.cpu != null) {
+      document.getElementById("dash-cpu").textContent = Math.round(mon.cpu) + "%";
+      setBar(document.getElementById("dash-bar-cpu"), mon.cpu);
+    }
+    if (mon.memory_percent != null) {
+      document.getElementById("dash-mem").textContent = Math.round(mon.memory_percent) + "%";
+      setBar(document.getElementById("dash-bar-mem"), mon.memory_percent);
+    }
+    if (mon.disk_percent != null) {
+      document.getElementById("dash-disk").textContent = Math.round(mon.disk_percent) + "%";
+      setBar(document.getElementById("dash-bar-disk"), mon.disk_percent);
+    }
+    const appEl = document.getElementById("dash-appdir");
+    if (appEl) appEl.textContent = formatBytes(mon.app_dir_bytes);
+
+    const sc = data.screeners || {};
+    document.getElementById("dash-sc-total").textContent = String(sc.total ?? 0);
+    document.getElementById("dash-sc-on").textContent = String(sc.enabled ?? 0);
+    document.getElementById("dash-sc-debug").textContent = String(sc.debug_enabled ?? 0);
+
+    const sg = data.signals || {};
+    document.getElementById("dash-sig-total").textContent = String(sg.total ?? 0);
+    document.getElementById("dash-sig-24").textContent = String(sg.last_24h ?? 0);
+    document.getElementById("dash-sig-ok").textContent = String(sg.telegram_ok_24h ?? 0);
+    document.getElementById("dash-sig-fail").textContent = String(sg.telegram_fail_24h ?? 0);
+
+    const an = data.analytics || {};
+    document.getElementById("dash-an-total").textContent = String(an.sessions_total ?? 0);
+    const pills = document.getElementById("dash-status-pills");
+    pills.innerHTML = "";
+    const by = an.sessions_by_status || {};
+    Object.keys(by).sort().forEach(function (k) {
+      const span = document.createElement("span");
+      span.textContent = k + ": " + by[k];
+      pills.appendChild(span);
+    });
+
+    const rt = data.scanner_runtime || {};
+    document.getElementById("dash-rt-cards").textContent = String(rt.max_cards ?? "—");
+    document.getElementById("dash-rt-post").textContent = String(rt.posttracking_minutes ?? "—");
+    document.getElementById("dash-rt-cd").textContent = String(rt.cooldown_hours ?? "—");
+    document.getElementById("dash-rt-stat").textContent = rt.statistics_enabled ? "да" : "нет";
+  }
+
+  var cached = null;
+  try {
+    var raw = sessionStorage.getItem(CACHE_KEY);
+    if (raw) cached = JSON.parse(raw);
+  } catch (e) {}
+
+  if (cached && cached.screeners && cached.monitoring) {
+    render(cached);
+    showCacheBadge(true);
+  }
+
+  var initial = {};
+  try {
+    const el = document.getElementById("mp-dash-initial");
+    if (el && el.textContent) initial = JSON.parse(el.textContent);
+  } catch (e) {}
+
+  if (initial && initial.screeners) {
+    render(initial);
+    showCacheBadge(false);
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(initial));
+    } catch (err) {}
+  }
+
+  function persistAndRender(data) {
+    render(data);
+    showCacheBadge(false);
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    } catch (err) {}
+  }
+
+  function poll() {
+    fetch(URL, { credentials: "same-origin" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(persistAndRender)
+      .catch(function () {});
+  }
+
+  poll();
+  setInterval(poll, 20000);
+})();
+</script>
+{% endblock %}

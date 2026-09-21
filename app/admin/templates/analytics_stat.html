@@ -1,0 +1,581 @@
+{% extends "layout.html" %}
+{% block title %}<title>Stat {{ symbol_slug|upper }}</title>{% endblock %}
+
+{% block head_css %}
+{{ super() }}
+<style>
+  .page-title { display: none; }
+  .page-header { display: none !important; }
+  /*
+   * Tabler: .row-deck > [class*=col-] { display:flex; align-items:stretch } без flex-direction
+   * → по умолчанию flex-direction: row, шапка и график оказываются слева/справа.
+   */
+  .row.row-deck.row-cards > .stat-page.col-12 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .stat-page {
+    max-width: none !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    box-sizing: border-box;
+    padding: 8px 0 48px;
+    margin-left: 0;
+    margin-right: 0;
+    min-width: 0;
+    overflow-x: clip;
+  }
+  .stat-page-head { margin-bottom: 10px; flex: 0 0 auto; }
+  .stat-page-head-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .stat-page h1.stat-page-title {
+    font-size: 1rem;
+    margin: 0;
+    color: var(--mp-c-text, #e0e6f0);
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .stat-meta {
+    font-size: 12px;
+    color: var(--mp-c-hint, #6677aa);
+    margin: 0;
+    word-break: break-all;
+    flex: 1 1 200px;
+    min-width: 0;
+  }
+  /* Ширина относительно main/column, не 100vw — иначе при раскрытом сайдбаре съезжает влево и даёт пустоту справа. */
+  .stat-charts-fullbleed {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    box-sizing: border-box;
+  }
+  .stat-charts { display: flex; flex-direction: column; gap: 0; width: 100%; min-width: 0; }
+  .stat-chart-box {
+    background: var(--mp-c-surface, #1a1f2e); border: 1px solid var(--mp-c-border, #2d3550);
+    border-radius: 10px; padding: 12px;
+    min-height: 0;
+    min-width: 0;
+  }
+  .stat-chart-box--graph {
+    width: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .stat-events-wrap {
+    padding: 16px 1rem 0;
+  }
+  .stat-chart-canvas-wrap {
+    height: 500px;
+    max-height: 500px;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .stat-chart-canvas-wrap canvas {
+    max-height: 500px !important;
+  }
+  .stat-chart-box h2 { font-size: 13px; margin: 0 0 8px; color: var(--mp-c-text-muted, #8899bb); font-weight: 600; }
+  .stat-events { font-size: 12px; color: var(--mp-events-text, #9aa8c4); max-height: 200px; overflow: auto; }
+  .stat-events li { margin-bottom: 6px; }
+  .stat-toolbar {
+    margin: 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: nowrap;
+    flex: 0 1 auto;
+  }
+  .stat-toolbar label { font-size: 12px; color: var(--mp-c-text-muted, #8899bb); display: flex; gap: 6px; align-items: center; cursor: pointer; white-space: nowrap; }
+  .stat-hint { font-size: 11px; color: var(--mp-c-hint, #6677aa); white-space: nowrap; flex: 0 1 auto; min-width: 0; }
+  .stat-err { color: var(--mp-err, #e57373); margin-top: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}{{ super() }}
+<div class="stat-page col-12 w-100 px-0" data-tracking-id="{{ tracking_id|e }}">
+  <div class="stat-page-head">
+    <div class="stat-page-head-row">
+      <h1 class="stat-page-title">Stat · {{ symbol_slug|upper }} · <code style="font-size:12px">{{ tracking_id|e }}</code></h1>
+      <div class="stat-meta" id="stat-session-line">Загрузка…</div>
+      <div class="stat-toolbar">
+        <label title="Все тики (без агрегации)"><input type="checkbox" id="stat-all-ticks" /> Все тики</label>
+        <label title="Нормализовать score (0–1 по окну)"><input type="checkbox" id="stat-normalize" /> Score 0–1</label>
+        <label title="Перцентили 1%…99% по min/max за минуту, чтобы редкие всплески не сжимали столбцы по вертикали"><input type="checkbox" id="stat-price-clip" checked /> Срез выбросов (цена)</label>
+      </div>
+      <span class="stat-hint">Линии: 1 точка/мин (последний sample). Столбцы цены: min/max по всем sample за минуту бакета в UTC; метки оси и события — в часовом поясе из «Настройки».</span>
+    </div>
+  </div>
+  <div class="stat-charts stat-charts-fullbleed">
+    <div class="stat-chart-box stat-chart-box--graph">
+      <h2>Score + фильтры PD / OI / LQ · фон: цена low–high за минуту (USDT)</h2>
+      <div class="stat-chart-canvas-wrap">
+        <canvas id="chart-main"></canvas>
+      </div>
+    </div>
+    <div class="stat-events-wrap">
+      <div class="stat-chart-box">
+        <h2>События</h2>
+        <ul class="stat-events" id="stat-events"></ul>
+      </div>
+    </div>
+  </div>
+  <p class="stat-err px-3" id="stat-err" style="display:none"></p>
+</div>
+{% endblock %}
+
+{% block script %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const root = document.querySelector('.stat-page[data-tracking-id]');
+  const trackingId = (root && root.dataset.trackingId) ? root.dataset.trackingId : '';
+  const errEl = document.getElementById('stat-err');
+  const sessionLine = document.getElementById('stat-session-line');
+  const eventsUl = document.getElementById('stat-events');
+  const normChk = document.getElementById('stat-normalize');
+  const allTicksChk = document.getElementById('stat-all-ticks');
+  const priceClipChk = document.getElementById('stat-price-clip');
+
+  function isPriceClipOn() {
+    return !!(priceClipChk && priceClipChk.checked);
+  }
+
+  let chart;
+  let chartResizeObserver = null;
+  let lastSamples = [];
+  let lastEvents = [];
+
+  function chartTheme() {
+    const st = getComputedStyle(document.documentElement);
+    return {
+      tick: (st.getPropertyValue('--mp-chart-tick').trim() || '#94a3b8'),
+      grid: (st.getPropertyValue('--mp-chart-grid').trim() || 'rgba(148, 163, 184, 0.22)'),
+      body: (st.getPropertyValue('--bs-body-color').trim() || '#e2e8f0'),
+    };
+  }
+
+  /** Одна точка на минуту UTC: в каждой минуте берём последний sample (как «закрытие» интервала). */
+  function aggregateSamplesByMinute(samples) {
+    const sorted = [...samples].sort((a, b) => String(a.ts || '').localeCompare(String(b.ts || '')));
+    const byMinute = new Map();
+    for (const s of sorted) {
+      const t = Date.parse(s.ts);
+      if (!Number.isFinite(t)) continue;
+      const mk = Math.floor(t / 60000);
+      byMinute.set(mk, s);
+    }
+    const keys = [...byMinute.keys()].sort((a, b) => a - b);
+    return keys.map((mk) => byMinute.get(mk));
+  }
+
+  /** last_price из сэмпла или fallback PD final_price (старые JSONL). */
+  function extractSamplePrice(sample) {
+    if (sample && sample.last_price != null && sample.last_price !== '') {
+      const n = Number(sample.last_price);
+      if (Number.isFinite(n)) return n;
+    }
+    return extractFilterCurrent(sample, 'pd', 'final_price');
+  }
+
+  /** Текущее значение метрики из строки test_filters по id фильтра (pd, oi, lq). */
+  function extractFilterCurrent(sample, filterId, metricKey) {
+    const rows = sample && sample.test_filters;
+    if (!Array.isArray(rows)) return null;
+    const row = rows.find(function (r) { return r && r.id === filterId; });
+    if (!row || !row.current || typeof row.current !== 'object') return null;
+    const v = row.current[metricKey];
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function formatAxisLabel(ts, withSeconds) {
+    if (window.MpAdminTime && typeof window.MpAdminTime.formatAxisLabel === 'function') {
+      return window.MpAdminTime.formatAxisLabel(ts, withSeconds);
+    }
+    if (!ts) return '';
+    const t = Date.parse(ts);
+    if (!Number.isFinite(t)) return String(ts);
+    const d = new Date(t);
+    const pad = (n) => String(n).padStart(2, '0');
+    const base = pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
+    if (withSeconds) return base + ':' + pad(d.getUTCSeconds());
+    return base;
+  }
+
+  function parseSamples(rows) {
+    const samples = [];
+    const events = [];
+    for (const r of rows) {
+      if (!r || typeof r !== 'object') continue;
+      const k = r.kind;
+      if (k === 'sample') samples.push(r);
+      else if (k === 'event') events.push(r);
+      else if (k === 'session_meta') events.unshift({ kind: 'event', event: 'session_meta', ts: r.ts || '', raw: r });
+    }
+    samples.sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
+    events.sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
+    return { samples, events };
+  }
+
+  /** По всем сэмплам: UTC-минита → min/max цены (для столбцов low–high). */
+  function buildPriceRangeByMinute(allSamples) {
+    const sorted = [...allSamples].sort((a, b) => String(a.ts || '').localeCompare(String(b.ts || '')));
+    const byMinute = new Map();
+    for (const s of sorted) {
+      const t = Date.parse(s.ts);
+      if (!Number.isFinite(t)) continue;
+      const p = extractSamplePrice(s);
+      if (p == null || !Number.isFinite(p)) continue;
+      const mk = Math.floor(t / 60000);
+      const cur = byMinute.get(mk);
+      if (!cur) {
+        byMinute.set(mk, { low: p, high: p });
+      } else {
+        cur.low = Math.min(cur.low, p);
+        cur.high = Math.max(cur.high, p);
+      }
+    }
+    return byMinute;
+  }
+
+  function priceRangeBarForSample(sample, rangeByMinute) {
+    const t = Date.parse(sample.ts);
+    if (!Number.isFinite(t)) return null;
+    const mk = Math.floor(t / 60000);
+    const r = rangeByMinute.get(mk);
+    if (!r) return null;
+    return [r.low, r.high];
+  }
+
+  /** Линейная квантиль в отсортированном массиве, q ∈ [0, 1]. */
+  function quantileLinear(sorted, q) {
+    const n = sorted.length;
+    if (n === 0) return NaN;
+    if (n === 1) return sorted[0];
+    const pos = (n - 1) * q;
+    const lo = Math.floor(pos);
+    const hi = Math.ceil(pos);
+    if (lo === hi) return sorted[lo];
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+  }
+
+  /**
+   * Границы оси цены для floating bars [low, high]. Иначе авто-диапазон Chart.js
+   * по глобальным min/max тянет ось, и минутные столбцы выглядят плоскими.
+   * «Срез»: p1 по всем low и p99 по всем high (устойчиво к барам-выбросам).
+   * Лог-ось для абсолютного USDT здесь не используем — портит плоский ряд; отдельный мини-чарт цены — отдельная фича.
+   */
+  function computeYPriceAxisFromBars(priceFloatingBars, clipOutliers) {
+    const lows = [];
+    const highs = [];
+    for (let i = 0; i < priceFloatingBars.length; i++) {
+      const b = priceFloatingBars[i];
+      if (!Array.isArray(b) || b.length < 2) continue;
+      let lo = Number(b[0]);
+      let hi = Number(b[1]);
+      if (!Number.isFinite(lo) || !Number.isFinite(hi)) continue;
+      if (lo > hi) {
+        const t = lo;
+        lo = hi;
+        hi = t;
+      }
+      lows.push(lo);
+      highs.push(hi);
+    }
+    if (lows.length === 0) return null;
+    const sortedL = [...lows].sort((a, b) => a - b);
+    const sortedH = [...highs].sort((a, b) => a - b);
+    let minV;
+    let maxV;
+    if (clipOutliers && sortedL.length >= 3) {
+      minV = quantileLinear(sortedL, 0.01);
+      maxV = quantileLinear(sortedH, 0.99);
+    } else {
+      minV = sortedL[0];
+      maxV = sortedH[sortedH.length - 1];
+    }
+    if (minV > maxV) {
+      minV = Math.min(...lows);
+      maxV = Math.max(...highs);
+    }
+    const span = maxV - minV;
+    const mid = (minV + maxV) * 0.5;
+    const relPad = Math.abs(mid) * 1e-4;
+    const pad = span > 0 ? Math.max(span * 0.05, relPad) : Math.max(relPad, 1e-12);
+    return { min: minV - pad, max: maxV + pad };
+  }
+
+  function buildDatasets(series, normalize, withSeconds, allSamples) {
+    const rangeByMinute = buildPriceRangeByMinute(allSamples);
+    const labels = series.map((s) => formatAxisLabel(s.ts, withSeconds));
+    const scores = series.map((s) => (s.score != null && !Number.isNaN(Number(s.score)) ? Number(s.score) : null));
+    let scoreData = scores.map((v) => (v == null ? null : v));
+    if (normalize && scoreData.some((v) => v != null)) {
+      const nums = scoreData.filter((v) => v != null);
+      const mn = Math.min(...nums);
+      const mx = Math.max(...nums);
+      const span = mx - mn || 1;
+      scoreData = scoreData.map((v) => (v == null ? null : (v - mn) / span));
+    }
+
+    const pdPct = series.map(function (s) {
+      return extractFilterCurrent(s, 'pd', 'price_change_pct');
+    });
+    const oiPct = series.map(function (s) {
+      return extractFilterCurrent(s, 'oi', 'change_pct');
+    });
+    const lqPct = series.map(function (s) {
+      return extractFilterCurrent(s, 'lq', 'lq_pct_of_daily_volume');
+    });
+    const priceFloatingBars = series.map(function (s) {
+      return priceRangeBarForSample(s, rangeByMinute);
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'цена low–high (за мин., USDT)',
+          data: priceFloatingBars,
+          yAxisID: 'yPrice',
+          order: 0,
+          backgroundColor: 'rgba(38, 198, 218, 0.22)',
+          borderColor: 'rgba(38, 198, 218, 0.42)',
+          borderWidth: 1,
+          borderSkipped: false,
+          categoryPercentage: 0.92,
+          barPercentage: 0.85,
+        },
+        {
+          type: 'line',
+          label: normalize ? 'score (norm.)' : 'score',
+          data: scoreData,
+          borderColor: '#5b9cf6',
+          backgroundColor: 'rgba(91,156,246,0.12)',
+          spanGaps: true,
+          tension: 0.15,
+          yAxisID: 'y',
+          borderWidth: 2,
+          order: 10,
+          pointRadius: 0,
+        },
+        {
+          type: 'line',
+          label: 'PD price_change_pct',
+          data: pdPct,
+          borderColor: '#ff9800',
+          backgroundColor: 'rgba(255,152,0,0.06)',
+          spanGaps: true,
+          tension: 0.12,
+          yAxisID: 'y1',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          order: 10,
+        },
+        {
+          type: 'line',
+          label: 'OI change_pct',
+          data: oiPct,
+          borderColor: '#66bb6a',
+          backgroundColor: 'rgba(102,187,106,0.06)',
+          spanGaps: true,
+          tension: 0.12,
+          yAxisID: 'y1',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          order: 10,
+        },
+        {
+          type: 'line',
+          label: 'LQ lq_pct_of_daily_volume',
+          data: lqPct,
+          borderColor: '#ba68c8',
+          backgroundColor: 'rgba(186,104,200,0.06)',
+          spanGaps: true,
+          tension: 0.12,
+          yAxisID: 'y1',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          order: 10,
+        },
+      ],
+      priceBars: priceFloatingBars,
+    };
+  }
+
+  function renderChart(samples, normalize, useAllTicks) {
+    const series = useAllTicks ? samples : aggregateSamplesByMinute(samples);
+    const ctx = document.getElementById('chart-main');
+    const wrap = document.querySelector('.stat-chart-canvas-wrap');
+    const ds = buildDatasets(series, normalize, useAllTicks, samples);
+    const yPriceBounds = computeYPriceAxisFromBars(ds.priceBars, isPriceClipOn());
+    if (chartResizeObserver) {
+      chartResizeObserver.disconnect();
+      chartResizeObserver = null;
+    }
+    if (chart) {
+      chart.destroy();
+      chart = null;
+    }
+    const th = chartTheme();
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ds.labels,
+        datasets: ds.datasets,
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 4, bottom: 4, left: 4, right: 10 } },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { boxWidth: 12, font: { size: 11 }, padding: 8, color: th.body },
+          },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                const v = ctx.raw;
+                if (ctx.dataset.type === 'bar' && Array.isArray(v) && v.length === 2) {
+                  return ctx.dataset.label + ': ' + v[0] + ' … ' + v[1];
+                }
+                if (v == null || (typeof v === 'number' && !Number.isFinite(v))) {
+                  return ctx.dataset.label + ': —';
+                }
+                return ctx.dataset.label + ': ' + v;
+              },
+            },
+          },
+        },
+        scales: (function () {
+          const yPriceScale = {
+            position: 'right',
+            title: { display: true, text: 'цена (USDT)' },
+            grid: { drawOnChartArea: false },
+            ticks: { maxTicksLimit: 10 },
+          };
+          if (yPriceBounds) {
+            yPriceScale.min = yPriceBounds.min;
+            yPriceScale.max = yPriceBounds.max;
+          }
+          return {
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: useAllTicks ? 12 : 24,
+                color: th.tick,
+              },
+              grid: { color: th.grid },
+            },
+            y: {
+              position: 'left',
+              title: { display: true, text: 'score', color: th.tick },
+              ticks: { color: th.tick },
+              grid: { drawOnChartArea: true, color: th.grid },
+            },
+            y1: {
+              position: 'right',
+              title: { display: true, text: 'фильтры (текущие %)', color: th.tick },
+              ticks: { color: th.tick },
+              grid: { drawOnChartArea: false },
+            },
+            yPrice: Object.assign({}, yPriceScale, {
+              ticks: Object.assign({ color: th.tick }, yPriceScale.ticks || {}),
+              title: Object.assign({ display: true, color: th.tick }, yPriceScale.title || {}),
+            }),
+          };
+        })(),
+      },
+    });
+    if (wrap && typeof ResizeObserver !== 'undefined') {
+      chartResizeObserver = new ResizeObserver(function () {
+        if (chart) chart.resize();
+      });
+      chartResizeObserver.observe(wrap);
+    }
+    requestAnimationFrame(function () {
+      if (chart) chart.resize();
+    });
+  }
+
+  function redrawChart() {
+    if (!lastSamples.length) return;
+    renderChart(lastSamples, normChk.checked, !!(allTicksChk && allTicksChk.checked));
+  }
+
+  function renderEvents(events) {
+    lastEvents = events;
+    eventsUl.innerHTML = '';
+    for (const e of events) {
+      const li = document.createElement('li');
+      const ev = e.event || e.kind || '—';
+      const tsDisp = window.MpAdminTime && typeof window.MpAdminTime.formatDateTime === 'function'
+        ? window.MpAdminTime.formatDateTime(e.ts || '')
+        : (e.ts || '');
+      li.textContent = tsDisp + ' — ' + ev;
+      eventsUl.appendChild(li);
+    }
+  }
+
+  window.addEventListener(
+    window.MpAdminTime && window.MpAdminTime.EVENT_NAME ? window.MpAdminTime.EVENT_NAME : 'mp-admin-timezone-change',
+    function () {
+      if (!lastSamples.length) return;
+      redrawChart();
+      renderEvents(lastEvents);
+    }
+  );
+
+  window.addEventListener('mp-admin-theme-change', function () {
+    if (!lastSamples.length) return;
+    redrawChart();
+  });
+
+  fetch('/admin_api/analytics/samples?tracking_id=' + encodeURIComponent(trackingId), { credentials: 'same-origin' })
+    .then((r) => {
+      if (r.status === 404) throw new Error('Сессия не найдена');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then((data) => {
+      const sess = data.session || {};
+      sessionLine.textContent = (sess.symbol || '') + ' · ' + (sess.exchange || '') + ' · ' + (sess.status || '');
+      const rows = data.samples || [];
+      const { samples, events } = parseSamples(rows);
+      lastSamples = samples;
+      renderEvents(events);
+      renderChart(samples, normChk.checked, !!(allTicksChk && allTicksChk.checked));
+      normChk.onchange = () => redrawChart();
+      if (allTicksChk) allTicksChk.onchange = () => redrawChart();
+      if (priceClipChk) priceClipChk.onchange = () => redrawChart();
+    })
+    .catch((e) => {
+      errEl.style.display = '';
+      errEl.textContent = e.message || String(e);
+      sessionLine.textContent = '';
+    });
+})();
+</script>
+{% endblock %}

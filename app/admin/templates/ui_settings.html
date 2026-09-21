@@ -1,0 +1,202 @@
+{% extends "layout.html" %}
+{% block title %}<title>Настройки</title>{% endblock %}
+
+{% block content %}{{ super() }}
+
+<style>
+  /* Переопределяем стили для соответствия общей эстетике */
+  .mp-ui-settings .card {
+    background: var(--mp-c-surface, #1a1f2e);
+    border: 1px solid var(--mp-c-border, #2d3550);
+    border-radius: 10px;
+  }
+  .mp-ui-settings .form-label {
+    font-weight: 600;
+    color: var(--mp-c-text-soft, #c0ccdd);
+  }
+  .mp-ui-settings .form-select {
+    background: var(--mp-c-raised, #232a3e);
+    color: var(--mp-c-text, #e0e6f0);
+    border-color: var(--mp-c-border, #2d3550);
+  }
+  .mp-ui-settings .form-select:focus {
+    background: var(--mp-c-raised-focus, #2a334d);
+    border-color: var(--mp-c-border-focus, #3a5bbf);
+    color: var(--mp-c-text-bright, #fff);
+  }
+  /* Строка настроек: подпись + контрол; повторять .mp-setting-row для новых полей */
+  .mp-ui-settings .mp-setting-row:last-child {
+    margin-bottom: 0 !important;
+  }
+  .mp-ui-settings .mp-setting-control-col {
+    min-width: 0;
+  }
+</style>
+
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <h2 class="page-title">
+          Настройки интерфейса
+        </h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body mp-ui-settings">
+  <div class="container-xl">
+    <div class="row row-cards">
+      <div class="col-12">
+        <div class="card w-100">
+          <div class="card-body">
+            {# Паттерн строки: скопировать блок .mp-setting-row для новых настроек #}
+            <div class="row align-items-center g-2 g-md-3 mb-3 mp-setting-row">
+              <div class="col-12 col-md-4 col-xl-3">
+                <label
+                  class="form-label mb-0 text-md-end d-block"
+                  for="mp-admin-tz-select"
+                >
+                  Часовой пояс
+                </label>
+              </div>
+              <div class="col-12 col-md mp-setting-control-col">
+                <select id="mp-admin-tz-select" class="form-select"></select>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer bg-transparent border-0 d-flex justify-content-end">
+            <button
+              type="button"
+              id="mp-admin-settings-save"
+              class="btn btn-primary"
+              disabled
+              aria-disabled="true"
+            >
+              Сохранить
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+{{ super() }}
+<script>
+(function () {
+  var sel = document.getElementById("mp-admin-tz-select");
+  var saveBtn = document.getElementById("mp-admin-settings-save");
+
+  var FALLBACK_ZONES = [
+    "UTC",
+    "Europe/Moscow",
+    "Europe/Kyiv",
+    "Asia/Yekaterinburg",
+    "Asia/Novosibirsk",
+    "Asia/Vladivostok",
+    "America/Sao_Paulo",
+    "America/New_York",
+    "America/Los_Angeles",
+    "Asia/Dubai",
+    "Asia/Singapore",
+    "Europe/London",
+    "Asia/Tokyo",
+    "Australia/Sydney",
+  ];
+
+  /** Эталон из localStorage; меняется только после успешного «Сохранить». */
+  var savedTz = MpAdminTime.getTimezone();
+
+  function zonesList() {
+    if (typeof Intl !== "undefined" && typeof Intl.supportedValuesOf === "function") {
+      try {
+        return Intl.supportedValuesOf("timeZone").slice();
+      } catch (e) {}
+    }
+    return FALLBACK_ZONES.slice();
+  }
+
+  /**
+   * Текущее смещение от UTC для зоны (с учётом DST «сейчас»): « +7», « -5», « +5:30».
+   */
+  function utcOffsetSuffix(timeZone, date) {
+    try {
+      var fmt = new Intl.DateTimeFormat("en-US", {
+        timeZone: timeZone,
+        timeZoneName: "shortOffset",
+      });
+      var parts = fmt.formatToParts(date);
+      var i;
+      var tzVal = "";
+      for (i = 0; i < parts.length; i++) {
+        if (parts[i].type === "timeZoneName") {
+          tzVal = parts[i].value;
+          break;
+        }
+      }
+      if (!tzVal) return "";
+      var v = tzVal.replace(/^GMT/i, "").trim();
+      if (v === "" || v === "0") return " +0";
+      if (v.charAt(0) !== "+" && v.charAt(0) !== "-") v = "+" + v;
+      return " " + v;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function optionLabel(z, date) {
+    return z + utcOffsetSuffix(z, date);
+  }
+
+  function fillSelect() {
+    var zones = zonesList();
+    zones.sort(function (a, b) {
+      if (a === "UTC") return -1;
+      if (b === "UTC") return 1;
+      return a.localeCompare(b);
+    });
+    var now = new Date();
+    sel.innerHTML = "";
+    var zoneSet = {};
+    zones.forEach(function (z) {
+      if (zoneSet[z]) return;
+      zoneSet[z] = true;
+      var o = document.createElement("option");
+      o.value = z;
+      o.textContent = optionLabel(z, now);
+      sel.appendChild(o);
+    });
+    if (!zoneSet[savedTz]) {
+      var o = document.createElement("option");
+      o.value = savedTz;
+      o.textContent = optionLabel(savedTz, now);
+      sel.appendChild(o);
+    }
+    sel.value = savedTz;
+  }
+
+  function syncSaveEnabled() {
+    var dirty = sel.value !== savedTz;
+    saveBtn.disabled = !dirty;
+    saveBtn.setAttribute("aria-disabled", dirty ? "false" : "true");
+  }
+
+  fillSelect();
+  syncSaveEnabled();
+
+  sel.addEventListener("change", syncSaveEnabled);
+
+  saveBtn.addEventListener("click", function () {
+    if (saveBtn.disabled) return;
+    MpAdminTime.setTimezone(sel.value);
+    savedTz = sel.value;
+    syncSaveEnabled();
+  });
+})();
+</script>
+{% endblock %}

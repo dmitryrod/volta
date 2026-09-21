@@ -1,0 +1,149 @@
+{% extends "layout.html" %}
+{% block content %}{{ super() }}
+
+<style>
+    .page-title {
+        display: none;
+    }
+    .page-header {
+        display: none !important;
+    }
+
+    .logs-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    .logs-toolbar h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--mp-c-text, #e2e8f0);
+        margin: 0;
+    }
+
+    #log-search {
+        flex: 1;
+        min-width: 200px;
+        padding: 7px 12px;
+        border: 1px solid var(--mp-c-border, #2d3550);
+        background: var(--mp-c-raised, #232a3e);
+        color: var(--mp-c-text, #e2e8f0);
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+    }
+
+    #log-search:focus {
+        border-color: var(--mp-c-link, #5b9cf6);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--mp-c-link, #5b9cf6) 25%, transparent);
+    }
+
+    #log-btn-bottom {
+        padding: 7px 14px;
+        background: var(--mp-c-link, #2563eb);
+        color: var(--mp-c-text-bright, #fff);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    #log-btn-bottom:hover {
+        filter: brightness(0.95);
+    }
+
+    #log-container {
+        background: var(--mp-logs-bg, #1e1e1e);
+        color: var(--mp-logs-fg, #d4d4d4);
+        border: 1px solid var(--mp-c-border, #2d3550);
+        border-radius: 12px;
+        padding: 20px;
+        font-family: "Fira Code", "Consolas", "Courier New", monospace;
+        font-size: 12.5px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 75vh;
+        overflow-y: auto;
+    }
+
+    #log-container .log-line {
+        display: block;
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    #log-container .log-line.hidden {
+        display: none;
+    }
+
+    #log-container .highlight {
+        background: var(--mp-logs-hl-bg, #f9ca24);
+        color: var(--mp-logs-hl-fg, #2d3436);
+        border-radius: 2px;
+        padding: 0 2px;
+    }
+
+    .log-line-error   { color: #ff7675; }
+    .log-line-warning { color: #fdcb6e; }
+    .log-line-info    { color: #74b9ff; }
+    .log-line-debug   { color: #a8a8a8; }
+    .log-line-success { color: #55efc4; }
+
+    #match-count {
+        font-size: 12px;
+        color: var(--mp-logs-count, #636e72);
+    }
+</style>
+
+<div class="logs-toolbar">
+    <h2>Логи приложения</h2>
+    {% if log_truncated %}
+    <span id="log-truncated-note" style="font-size:12px;color:var(--mp-err, #e17055);max-width:420px;">
+      Показан хвост файла (~последние 512&nbsp;КБ). Начало обрезано для скорости — см. ротацию логов или полный файл на диске.
+    </span>
+    {% endif %}
+    <input id="log-search" type="text" placeholder="Фильтр по тексту…" oninput="filterLogs()" />
+    <span id="match-count"></span>
+    <button id="log-btn-bottom" onclick="scrollToBottom()">↓ В конец</button>
+</div>
+
+<div id="log-container">
+{% if log_content %}
+{% for line in log_content.splitlines() if line.strip() %}
+<span class="log-line{% if ' ERROR' in line or '|ERROR|' in line %} log-line-error{% elif ' WARNING' in line or '|WARNING|' in line %} log-line-warning{% elif ' SUCCESS' in line or '|SUCCESS|' in line %} log-line-success{% elif ' DEBUG' in line or '|DEBUG|' in line %} log-line-debug{% elif ' INFO' in line or '|INFO|' in line %} log-line-info{% endif %}">{{ line | e }}</span>
+{% endfor %}
+{% else %}
+<span style="color:var(--mp-logs-count, #636e72);">Файл app.log не найден или пуст.</span>
+{% endif %}
+</div>
+
+<script>
+    function filterLogs() {
+        const query = document.getElementById('log-search').value.toLowerCase().trim();
+        const lines = document.querySelectorAll('#log-container .log-line');
+        let count = 0;
+        lines.forEach(line => {
+            if (!query || line.textContent.toLowerCase().includes(query)) {
+                line.classList.remove('hidden');
+                count++;
+            } else {
+                line.classList.add('hidden');
+            }
+        });
+        document.getElementById('match-count').textContent = query ? `${count} совпадений` : '';
+    }
+
+    function scrollToBottom() {
+        const container = document.getElementById('log-container');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    scrollToBottom();
+</script>
+
+{% endblock %}

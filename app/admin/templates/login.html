@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block header %}{% endblock %}
+{% block sidebar %}{% endblock %}
+{% block content %}
+    <div class="container-tight py-4">
+        <div class="d-flex justify-content-end mb-3">
+            <label class="form-check form-switch mb-0" title="Светлая тема">
+                <input class="form-check-input" type="checkbox" id="mp-admin-theme-switch" role="switch" aria-label="Светлая цветовая схема" />
+            </label>
+        </div>
+        <form class="card card-md mp-login-card" action="{{ request.url }}" method="POST"
+              style="background: var(--mp-c-surface, #1a1f2e); border-color: var(--mp-c-border, #2d3550);">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4" style="color: var(--mp-c-text-bright, #f8fafc);">Вход в панель</h2>
+                {% if error %}
+                    <div class="alert alert-important alert-danger alert-dismissible"
+                         role="alert">
+                        <div class="d-flex">
+                            <div>
+                                <i class="ti ti-alert-circle"></i>
+                            </div>
+                            <div>{{ error }}</div>
+                        </div>
+                        <a class="btn-close btn-close-white"
+                           data-bs-dismiss="alert"
+                           aria-label="close"></a>
+                    </div>
+                {% endif %}
+                <div class="mb-3">
+                    <label class="form-label">{{ _("Username") }}</label>
+                    <input type="text"
+                           name="username"
+                           class="form-control {% if form_errors and form_errors.has('username') %}is-invalid{% elif error %}is-invalid{% endif %}"
+                           placeholder="{{ _('Username') }}"
+                           autocomplete="username"
+                           style="background: var(--mp-c-raised, #232a3e); color: var(--mp-c-text, #e0e6f0); border-color: var(--mp-c-border, #2d3550);"/>
+                    {% if form_errors and form_errors.has('username') %}
+                        <div class="invalid-feedback">{{ form_errors.msg('username') }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">{{ _("Password") }}</label>
+                    <input type="password"
+                           name="password"
+                           class="form-control {% if form_errors and form_errors.has('password') %}is-invalid{% elif error %}is-invalid{% endif %}"
+                           placeholder="{{ _('Password') }}"
+                           autocomplete="current-password"
+                           style="background: var(--mp-c-raised, #232a3e); color: var(--mp-c-text, #e0e6f0); border-color: var(--mp-c-border, #2d3550);"/>
+                    {% if form_errors and form_errors.has('password') %}
+                        <div class="invalid-feedback">{{ form_errors.msg('password') }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-2">
+                    <label class="form-check">
+                        <input name="remember_me" type="checkbox" class="form-check-input" />
+                        <span class="form-check-label">{{ _("Remember me") }}</span>
+                    </label>
+                </div>
+                <div class="form-footer">
+                    <button type="submit" class="btn btn-primary w-100" style="background: var(--mp-accent, #f5c518); border: none; color: #1a1a1a; font-weight: 600;">{{ _("Sign in") }}</button>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}

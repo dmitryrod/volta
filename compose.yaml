@@ -1,0 +1,4 @@
+# Запуск из корня репозитория: `docker compose up --build`
+# Каноническая спека сервисов: app/docker-compose.yaml (пути в ней относительно app/).
+include:
+  - app/docker-compose.yaml

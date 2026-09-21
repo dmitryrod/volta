@@ -1,0 +1,11 @@
+{
+  "name": "money_pulso",
+  "private": true,
+  "description": "Root tooling (Marp CLI for presentations). App code lives in app/.",
+  "scripts": {
+    "marp": "marp"
+  },
+  "devDependencies": {
+    "@marp-team/marp-cli": "^4.2.0"
+  }
+}

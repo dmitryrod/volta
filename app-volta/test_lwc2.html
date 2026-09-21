@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div id="c" style="width:400px;height:200px"></div>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+const c = LightweightCharts.createChart(document.getElementById("c"), { width: 400, height: 200 });
+const ps = c.priceScale("right");
+const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(ps)).filter(m => m.includes("Visible") || m.includes("Range") || m.includes("Scale"));
+document.body.insertAdjacentHTML("beforeend", "<pre>" + methods.join("\n") + "</pre>");
+document.body.insertAdjacentHTML("beforeend", "<pre>keys: " + Object.keys(ps).join(", ") + "</pre>");
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+[project]
+name = "money_pulso"
+version = "1.3.0"
+description = "Crypto screener for sale"
+readme = "README.md"
+requires-python = ">= 3.13"
+dependencies = [
+    "aiohttp>=3.10.0",
+    "aiofiles>=24.1.0",
+    "alembic>=1.15.2",
+    "asyncpg>=0.30.0",
+    "babel>=2.17.0",
+    "fastapi>=0.115.2",
+    "greenlet>=3.2.2",
+    "itsdangerous>=2.2.0",
+    "loguru>=0.7.3",
+    "psutil>=7.0.0",
+    "sqlalchemy>=2.0.41",
+    "starlette-admin>=0.14.1",
+    "unicex>=0.16.6",
+    "uvicorn>=0.34.0",
+    "requests>=2.32.0",
+]
+
+[project.optional-dependencies]
+# Marp: CSV → PNG charts (designer / presentations)
+presentations = [
+    "matplotlib>=3.9.0",
+]
+# Optional: plotly static PNG (needs kaleido)
+presentations-plotly = [
+    "matplotlib>=3.9.0",
+    "plotly>=5.18.0",
+    "kaleido>=0.2.1",
+]

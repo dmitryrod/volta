@@ -1,5 +1,76 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+.cursor/
+.cursorignore
+*backups/*
+backups/
+*.pyc
+*.key
+*.pem
+__pycache__/
+app/.pytest_cache/
+*.pytest_cache/*
+*cache/
+*.code-workspace*
+app/logs/
+*.log
+app/logs/signals_log.
+app/statistics-data/
+
+# Node
+**/node_modules/
+node_modules/
+**/dist/
+dist/
+**/build/
+build/
+
+# Editor and IDE Settings
+**/.vscode/
+**/*.code-workspace
+**/*.swp
+**/*.swo
+**/.idea/
+
+# OS-specific
+**/Thumbs.db
+**/ehthumbs.db
+**/.Trashes
+**/.DS_Store
+
+# Logs
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+**/lerna-debug.log*
+**/*.log
+
+# Environment Variables and Configs
+*env
 .env
-.venv
-__pycache__
-.pytest_cache
-cookies.txt
+.env.*
+*env.example
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+app-options/.env
+.venv/
+
+# npm / Yarn / pnpm Lock Files (if using one exclusively)
+**/yarn.lock
+**/pnpm-lock.yaml
+app/logs/app.log
+app/logs/app.log
+app/logs/app.log
+app/logs/signals_log.txt
+
+# Локальная RAG-память Cursor (Chroma + сгенерированная выжимка)
+.cursor/memory/chroma_db/
+.cursor/memory/rag_fts.sqlite
+.cursor/memory/.ingest_state.json
+.cursor/active_memory.md
+
+# Сопутствующая документация приложения — только локально, не в git
+app/docs/

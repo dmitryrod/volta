@@ -1,0 +1,238 @@
+{% extends "layout.html" %}
+{% block title %}<title>Аналитика</title>{% endblock %}
+{% block content %}{{ super() }}
+
+<style>
+  .page-title { display: none; }
+  .page-header { display: none !important; }
+  .analytics-page { padding: 8px 16px 48px; max-width: 1200px; }
+  .analytics-page h1 { font-size: 1.25rem; margin: 0 0 12px; color: var(--mp-c-text, #e0e6f0); }
+  .analytics-toolbar { margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .analytics-toolbar input {
+    background: var(--mp-c-raised, #232a3e); color: var(--mp-c-text-soft, #c0ccdd); border: 1px solid var(--mp-c-border, #2d3550);
+    border-radius: 6px; padding: 6px 10px; font-size: 13px;
+    min-width: 200px;
+  }
+  .analytics-toolbar input:focus-visible {
+    outline: 2px solid var(--mp-c-link, #5b9cf6);
+    outline-offset: 2px;
+    border-color: var(--mp-c-link, #5b9cf6);
+  }
+  .btn-analytics-purge {
+    background: var(--mp-purge-bg, #3d2a2a); color: var(--mp-purge-fg, #e8b4b4); border: 1px solid var(--mp-purge-border, #6a4040);
+    border-radius: 6px;
+    padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  .btn-analytics-purge:hover:not(:disabled) { background: var(--mp-purge-hover, #4a3030); }
+  .btn-analytics-purge:active:not(:disabled) { background: color-mix(in srgb, var(--mp-purge-bg, #3d2a2a) 80%, #000); }
+  .btn-analytics-purge:focus-visible {
+    outline: 2px solid var(--mp-purge-fg, #e8b4b4);
+    outline-offset: 2px;
+  }
+  .btn-analytics-purge:disabled { opacity: 0.5; cursor: not-allowed; }
+  .analytics-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--mp-c-border, #2d3550); }
+  table.analytics-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.analytics-table th, table.analytics-table td {
+    padding: 8px 10px; text-align: left; border-bottom: 1px solid color-mix(in srgb, var(--mp-c-border, #2d3550) 85%, transparent);
+  }
+  table.analytics-table th { background: var(--mp-c-surface, #1a1f2e); color: var(--mp-c-text-muted, #8899bb); font-weight: 600; }
+  table.analytics-table tr:hover td { background: var(--mp-c-surface-2, #1e2538); }
+  table.analytics-table a { color: var(--mp-c-link, #5b9cf6); text-decoration: none; }
+  table.analytics-table a:hover { text-decoration: underline; }
+  table.analytics-table a:focus-visible {
+    outline: 2px solid var(--mp-c-link, #5b9cf6);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  table.analytics-table a.btn-analytics-chart {
+    display: inline-block;
+    background: var(--mp-c-link, #5b9cf6);
+    color: #fff;
+    border: 1px solid color-mix(in srgb, var(--mp-c-link, #5b9cf6) 75%, #000);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  table.analytics-table a.btn-analytics-chart:hover {
+    filter: brightness(1.08);
+    text-decoration: none;
+  }
+  table.analytics-table a.btn-analytics-chart:focus-visible {
+    outline: 2px solid var(--mp-c-link, #5b9cf6);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  .cat-pill {
+    display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  }
+  .cat-active { background: var(--mp-cat-active-bg, #2e4a2e); color: var(--mp-cat-active-fg, #8fdf8f); }
+  .cat-done { background: var(--mp-cat-done-bg, #2d3550); color: var(--mp-cat-done-fg, #aab8d0); }
+  .cat-other { background: var(--mp-cat-err-bg, #3d2a2a); color: var(--mp-cat-err-fg, #e0a0a0); }
+  .analytics-empty { color: var(--mp-c-hint, #6677aa); padding: 16px; }
+  .analytics-err { color: var(--mp-err, #e57373); padding: 8px 0; }
+</style>
+
+<div class="analytics-page">
+  <h1>Аналитика Scanner</h1>
+  <div class="analytics-toolbar">
+    <input type="search" id="analytics-filter" placeholder="Фильтр: символ, биржа, tracking_id…" autocomplete="off" />
+    <button type="button" id="analytics-btn-purge" class="btn-analytics-purge" title="Удалить все сессии из БД и все JSONL в app/statistics-data">
+      Очистить
+    </button>
+  </div>
+  <div class="analytics-table-wrap">
+    <table class="analytics-table" id="analytics-table">
+      <thead>
+        <tr>
+          <th>Символ</th>
+          <th>Скринер</th>
+          <th>Биржа</th>
+          <th>Статус</th>
+          <th>Trigger</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="analytics-tbody">
+        <tr><td colspan="6" class="analytics-empty">Загрузка…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="analytics-err" id="analytics-err" style="display:none"></p>
+</div>
+
+<script>
+(function () {
+  const tbody = document.getElementById('analytics-tbody');
+  const errEl = document.getElementById('analytics-err');
+  const filterEl = document.getElementById('analytics-filter');
+  const btnPurge = document.getElementById('analytics-btn-purge');
+  let items = [];
+
+  function loadSessions() {
+    errEl.style.display = 'none';
+    tbody.innerHTML = '<tr><td colspan="6" class="analytics-empty">Загрузка…</td></tr>';
+    fetch('/admin_api/analytics/sessions', { credentials: 'same-origin' })
+      .then((r) => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then((data) => {
+        items = data.items || [];
+        render(items);
+      })
+      .catch((e) => {
+        errEl.style.display = '';
+        errEl.textContent = 'Ошибка: ' + e.message;
+        tbody.innerHTML = '<tr><td colspan="6" class="analytics-empty">—</td></tr>';
+      });
+  }
+
+  if (btnPurge) {
+    btnPurge.addEventListener('click', async function () {
+      if (!window.confirm(
+        'Удалить всю статистику Scanner?\n\n'
+        + '— таблица tracking_sessions в БД\n'
+        + '— все файлы в каталоге statistics-data\n'
+        + '— сброс сессий Scanner в памяти процесса'
+      )) return;
+      btnPurge.disabled = true;
+      try {
+        const r = await fetch('/admin_api/analytics/purge', { method: 'POST', credentials: 'same-origin' });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.detail || data.error || ('HTTP ' + r.status));
+        items = [];
+        render([]);
+        errEl.style.display = '';
+        errEl.style.color = 'var(--mp-cat-active-fg, #8fdf8f)';
+        errEl.textContent = 'Очищено: строк БД ' + (data.tracking_sessions_deleted ?? '—')
+          + ', файлов ' + (data.files_deleted ?? '—') + '.';
+      } catch (e) {
+        errEl.style.display = '';
+        errEl.style.color = 'var(--mp-err, #e57373)';
+        errEl.textContent = 'Ошибка: ' + (e && e.message ? e.message : e);
+      } finally {
+        btnPurge.disabled = false;
+      }
+    });
+  }
+
+  function catClass(cat) {
+    if (cat === 'active') return 'cat-pill cat-active';
+    if (cat === 'completed') return 'cat-pill cat-done';
+    return 'cat-pill cat-other';
+  }
+
+  function statPath(sym, tid) {
+    const slug = String(sym || '').toUpperCase().replace(/\//g, '').toLowerCase();
+    return '/admin/analytics/stat-' + encodeURIComponent(slug) + '-' + encodeURIComponent(tid);
+  }
+
+  function render(rows) {
+    tbody.innerHTML = '';
+    if (!rows.length) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="6" class="analytics-empty">Нет сессий</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      const href = statPath(r.symbol, r.tracking_id);
+      const trig = r.triggered_at
+        ? (window.MpAdminTime && typeof window.MpAdminTime.formatTriggerCompact === 'function'
+          ? window.MpAdminTime.formatTriggerCompact(r.triggered_at)
+          : r.triggered_at.replace('T', ' ').replace('Z', ''))
+        : '—';
+      tr.innerHTML = `
+        <td><strong>${esc(r.symbol)}</strong></td>
+        <td>${esc(r.screener_name || '')}</td>
+        <td>${esc((r.exchange || '') + ' ' + (r.market_type || ''))}</td>
+        <td><span class="${catClass(r.category)}">${esc(r.status || '')}</span></td>
+        <td style="font-variant-numeric:tabular-nums;font-size:12px;color:var(--mp-c-text-muted, #8899bb)">${esc(trig)}</td>
+        <td><a class="btn-analytics-chart" href="${href}">График</a></td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function applyFilter() {
+    const q = (filterEl.value || '').trim().toLowerCase();
+    if (!q) {
+      render(items);
+      return;
+    }
+    const filtered = items.filter((r) => {
+      const blob = [
+        r.symbol, r.screener_name, r.exchange, r.market_type,
+        r.status, r.tracking_id, r.category,
+      ].join(' ').toLowerCase();
+      return blob.includes(q);
+    });
+    render(filtered);
+  }
+
+  filterEl.addEventListener('input', applyFilter);
+
+  window.addEventListener(
+    window.MpAdminTime && window.MpAdminTime.EVENT_NAME ? window.MpAdminTime.EVENT_NAME : 'mp-admin-timezone-change',
+    function () {
+      render(items);
+    }
+  );
+
+  loadSessions();
+})();
+</script>
+
+{% endblock %}

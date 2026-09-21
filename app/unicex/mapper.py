@@ -1,0 +1,160 @@
+"""Модуль, который предоставляет мапперы для унифицированных клиентов и вебсокет-менеджеров."""
+
+__all__ = [
+    "get_uni_client",
+    "get_uni_websocket_manager",
+    "get_exchange_info",
+]
+
+# ruff: noqa
+
+from ._abc import IExchangeInfo, IUniClient, IUniWebsocketManager
+from .enums import Exchange
+from .exceptions import NotSupported
+
+from .aster import (
+    UniClient as AsterUniClient,
+    UniWebsocketManager as AsterUniWebsocketManager,
+    ExchangeInfo as AsterExchangeInfo,
+)
+from .binance import (
+    UniClient as BinanceUniClient,
+    UniWebsocketManager as BinanceUniWebsocketManager,
+    ExchangeInfo as BinanceExchangeInfo,
+)
+
+from .bitget import (
+    UniClient as BitgetUniClient,
+    UniWebsocketManager as BitgetUniWebsocketManager,
+    ExchangeInfo as BitgetExchangeInfo,
+)
+
+from .bybit import (
+    UniClient as BybitUniClient,
+    UniWebsocketManager as BybitUniWebsocketManager,
+    ExchangeInfo as BybitExchangeInfo,
+)
+
+from .gate import (
+    UniClient as GateioUniClient,
+    UniWebsocketManager as GateioUniWebsocketManager,
+    ExchangeInfo as GateioExchangeInfo,
+)
+
+from .hyperliquid import (
+    UniClient as HyperliquidUniClient,
+    UniWebsocketManager as HyperliquidUniWebsocketManager,
+    ExchangeInfo as HyperliquidExchangeInfo,
+)
+
+from .mexc import (
+    UniClient as MexcUniClient,
+    UniWebsocketManager as MexcUniWebsocketManager,
+    ExchangeInfo as MexcExchangeInfo,
+)
+
+from .okx import (
+    UniClient as OkxUniClient,
+    UniWebsocketManager as OkxUniWebsocketManager,
+    ExchangeInfo as OkxExchangeInfo,
+)
+
+from .kucoin import (
+    UniClient as KucoinUniClient,
+    UniWebsocketManager as KucoinUniWebsocketManager,
+    ExchangeInfo as KucoinExchangeInfo,
+)
+
+from .bingx import (
+    UniClient as BingXUniClient,
+    UniWebsocketManager as BingXUniWebsocketManager,
+    ExchangeInfo as BingXExchangeInfo,
+)
+
+
+_UNI_CLIENT_MAPPER: dict[Exchange, type[IUniClient]] = {
+    Exchange.ASTER: AsterUniClient,
+    Exchange.BINANCE: BinanceUniClient,
+    Exchange.BITGET: BitgetUniClient,
+    Exchange.BYBIT: BybitUniClient,
+    Exchange.GATE: GateioUniClient,
+    Exchange.HYPERLIQUID: HyperliquidUniClient,
+    Exchange.MEXC: MexcUniClient,
+    Exchange.OKX: OkxUniClient,
+    Exchange.KUCOIN: KucoinUniClient,
+    Exchange.BINGX: BingXUniClient,
+}
+"""Маппер, который связывает биржу и реализацию унифицированного клиента."""
+
+_UNI_WS_MANAGER_MAPPER: dict[Exchange, type[IUniWebsocketManager]] = {
+    Exchange.ASTER: AsterUniWebsocketManager,
+    Exchange.BINANCE: BinanceUniWebsocketManager,
+    Exchange.BITGET: BitgetUniWebsocketManager,
+    Exchange.BYBIT: BybitUniWebsocketManager,
+    Exchange.GATE: GateioUniWebsocketManager,
+    Exchange.HYPERLIQUID: HyperliquidUniWebsocketManager,
+    Exchange.MEXC: MexcUniWebsocketManager,
+    Exchange.OKX: OkxUniWebsocketManager,
+    Exchange.KUCOIN: KucoinUniWebsocketManager,
+    Exchange.BINGX: BingXUniWebsocketManager,
+}
+"""Маппер, который связывает биржу и реализацию унифицированного вебсокет-менеджера."""
+
+_EXCHANGE_INFO_MAPPER: dict[Exchange, type[IExchangeInfo]] = {
+    Exchange.ASTER: AsterExchangeInfo,
+    Exchange.BINANCE: BinanceExchangeInfo,
+    Exchange.BITGET: BitgetExchangeInfo,
+    Exchange.BYBIT: BybitExchangeInfo,
+    Exchange.GATE: GateioExchangeInfo,
+    Exchange.HYPERLIQUID: HyperliquidExchangeInfo,
+    Exchange.MEXC: MexcExchangeInfo,
+    Exchange.OKX: OkxExchangeInfo,
+    Exchange.KUCOIN: KucoinExchangeInfo,
+    Exchange.BINGX: BingXExchangeInfo,
+}
+"""Маппер, который связывает биржу и реализацию сборщика информации о тикерах на бирже."""
+
+
+def get_uni_client(exchange: Exchange) -> type[IUniClient]:
+    """Возвращает унифицированный клиент для указанной биржи.
+
+    Параметры:
+        exchange (`Exchange`): Биржа.
+
+    Возвращает:
+        `type[IUniClient]`: Унифицированный клиент для указанной биржи.
+    """
+    try:
+        return _UNI_CLIENT_MAPPER[exchange]
+    except KeyError as e:
+        raise NotSupported(f"Unsupported exchange: {exchange}") from e
+
+
+def get_uni_websocket_manager(exchange: Exchange) -> type[IUniWebsocketManager]:
+    """Возвращает унифицированный вебсокет-менеджер для указанной биржи.
+
+    Параметры:
+        exchange (`Exchange`): Биржа.
+
+    Возвращает:
+        `type[IUniWebsocketManager]`: Унифицированный вебсокет-менеджер для указанной биржи.
+    """
+    try:
+        return _UNI_WS_MANAGER_MAPPER[exchange]
+    except KeyError as e:
+        raise NotSupported(f"Unsupported exchange: {exchange}") from e
+
+
+def get_exchange_info(exchange: Exchange) -> type[IExchangeInfo]:
+    """Возвращает унифицированный интерфейс для получения информации о бирже.
+
+    Параметры:
+        exchange (`Exchange`): Биржа.
+
+    Возвращает:
+        `type[IExchangeInfo]`: Унифицированный интерфейс для получения информации о бирже.
+    """
+    try:
+        return _EXCHANGE_INFO_MAPPER[exchange]
+    except KeyError as e:
+        raise NotSupported(f"Unsupported exchange: {exchange}") from e
