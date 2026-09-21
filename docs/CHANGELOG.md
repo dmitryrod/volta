@@ -4,6 +4,11 @@
 
 ### Changed
 
+- Docker image: multi-stage Dockerfile (builder `uv sync --locked --no-dev`, runtime только `.venv` + код). Убраны `git` и `tests` из образа. Compose `api` стартует `alembic`/`uvicorn` из `.venv/bin`, без `uv run`. В репо добавлен `uv.lock`
+- `.dockerignore`: исключены `.git`, `.venv`, `tests`, `docs`, `.env`
+
+### Changed
+
 - Rebrand UI: **Volta** (toolbar, login, page titles, FastAPI title); Python package остаётся `app_options`
 - Docker dev: project `volta`, nginx host port `${VOLTA_HTTP_PORT:-8081}`, postgres host port только с `--profile dev-tools` (`${VOLTA_POSTGRES_PORT:-5436}`)
 - Docker prod: `docker-compose.prod.yaml` — без host ports, nginx на `proxy_network`, `nginx.prod.conf` для `volta.dmitryrod.ru`

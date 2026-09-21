@@ -97,7 +97,7 @@ Project name: `volta`. Container names: `volta-postgres`, `volta-api`, `volta-ng
 | `docker-compose.yaml` | Local dev |
 | `docker-compose.prod.yaml` | Prod: no host ports, `proxy_network` external |
 
-Старт api: `uv run alembic upgrade head`, затем uvicorn. Миграции при каждом старте контейнера `api`.
+Сборка `api`: multi-stage `Dockerfile` (builder ставит зависимости через `uv sync --locked --no-dev` по `uv.lock`, runtime копирует `.venv` и код, без `git`/`tests`). Старт контейнера: `alembic upgrade head`, затем `uvicorn` из `PATH` (`.venv/bin`). Миграции при каждом старте `api`. Повторный `--build` при неизменном `pyproject.toml` берёт слой deps из кэша.
 
 ### Prod networking
 
