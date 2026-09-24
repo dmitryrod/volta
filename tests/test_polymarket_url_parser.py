@@ -2,7 +2,7 @@
 
 import pytest
 
-from app_options.polymarket.url_parser import parse_event_slug_from_url
+from volta.polymarket.url_parser import parse_event_slug_from_url
 
 
 def test_parse_ru_event_url() -> None:

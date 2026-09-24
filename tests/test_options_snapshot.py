@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app_options.ingestor.collectors.options_snapshot import (
+from volta.ingestor.collectors.options_snapshot import (
     ChainContract,
     OptionsSnapshotCollector,
     _collect_chain_rows,

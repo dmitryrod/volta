@@ -1,6 +1,6 @@
 """Unit tests for chart price scale plausibility guards."""
 
-from app_options.chart_price_scale_guards import (
+from volta.chart_price_scale_guards import (
     get_left_reference_price_from_layout,
     is_persistable_price_range,
     is_plausible_left_price_range,

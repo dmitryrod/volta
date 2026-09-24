@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app_options.database.repositories.candle_repository import CandleRepository
+from volta.database.repositories.candle_repository import CandleRepository
 
 
 @pytest.mark.asyncio

@@ -7,14 +7,9 @@ backups/
 *.key
 *.pem
 __pycache__/
-app/.pytest_cache/
 *.pytest_cache/*
 *cache/
 *.code-workspace*
-app/logs/
-*.log
-app/logs/signals_log.
-app/statistics-data/
 
 # Node
 **/node_modules/
@@ -55,16 +50,11 @@ build/
 **/.env.development.local
 **/.env.test.local
 **/.env.production.local
-app-options/.env
 .venv/
 
 # npm / Yarn / pnpm Lock Files (if using one exclusively)
 **/yarn.lock
 **/pnpm-lock.yaml
-app/logs/app.log
-app/logs/app.log
-app/logs/app.log
-app/logs/signals_log.txt
 
 # Локальная RAG-память Cursor (Chroma + сгенерированная выжимка)
 .cursor/memory/chroma_db/
@@ -72,5 +62,4 @@ app/logs/signals_log.txt
 .cursor/memory/.ingest_state.json
 .cursor/active_memory.md
 
-# Сопутствующая документация приложения — только локально, не в git
-app/docs/
+README-LINTZ.md

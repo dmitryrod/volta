@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app_options.ingestor.collectors.options_snapshot import OptionsSnapshotCollector
-from app_options.ingestor.writer import SnapshotWriter
+from volta.ingestor.collectors.options_snapshot import OptionsSnapshotCollector
+from volta.ingestor.writer import SnapshotWriter
 
 
 @pytest.mark.asyncio
@@ -16,7 +16,7 @@ async def test_purge_deletes_expired_option_rows() -> None:
     writer = SnapshotWriter()
 
     cutoff = datetime(2025, 9, 9, 9, 0, tzinfo=timezone.utc)
-    with patch("app_options.ingestor.writer.Database.session_context") as ctx:
+    with patch("volta.ingestor.writer.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=MagicMock(snapshots=repo))
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         deleted = await writer.purge_expired_options(cutoff)
@@ -32,7 +32,7 @@ async def test_purge_idempotent() -> None:
     writer = SnapshotWriter()
     cutoff = datetime(2025, 9, 9, 9, 0, tzinfo=timezone.utc)
 
-    with patch("app_options.ingestor.writer.Database.session_context") as ctx:
+    with patch("volta.ingestor.writer.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=MagicMock(snapshots=repo))
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         first = await writer.purge_expired_options(cutoff)

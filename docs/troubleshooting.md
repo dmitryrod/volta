@@ -10,7 +10,7 @@
 
 1. Hard refresh: Ctrl+Shift+R на `http://localhost:8081/chart`
 2. DevTools → Network: `chart.js` должен грузиться с `?v=2` или свежим timestamp
-3. После правок JS: `docker compose restart nginx api` в `app-options/`
+3. После правок JS: `docker compose restart nginx api` из корня репозитория
 
 Проверка: клик ETH → legend начинается с `ETH`, в Network batch `base=ETH`.
 
@@ -118,7 +118,7 @@ docker compose ps
 
 Причина: нет session cookie.
 
-Шаги: войти через http://localhost:8081/login, убедиться что cookie `app_options_session` установлена.
+Шаги: войти через http://localhost:8081/login, убедиться что cookie `volta_session` установлена.
 
 Проверка:
 

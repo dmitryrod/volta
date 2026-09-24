@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app_options.database.repositories.snapshot_repository import (
+from volta.database.repositories.snapshot_repository import (
     SnapshotRepository,
     _chain_flat_candles,
     _format_option_label,

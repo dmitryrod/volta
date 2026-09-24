@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app_options.__main__ import app
+from volta.__main__ import app
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def client() -> TestClient:
 @pytest.fixture
 def authed_client(client: TestClient) -> TestClient:
     with patch(
-        "app_options.auth.middleware.is_authenticated_session",
+        "volta.auth.middleware.is_authenticated_session",
         return_value=True,
     ):
         yield client
@@ -44,7 +44,7 @@ def _event_row(slug: str, title: str = "Test Event") -> MagicMock:
 def test_list_polymarket_events_200(authed_client: TestClient) -> None:
     rows = [_event_row("eth-event-1")]
     mock_db = _mock_db({"list_polymarket_events": AsyncMock(return_value=rows)})
-    with patch("app_options.api.routes_polymarket.Database.session_context") as ctx:
+    with patch("volta.api.routes_polymarket.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         resp = authed_client.get("/api/polymarket/events?base=ETH")
@@ -70,8 +70,8 @@ def test_import_polymarket_events_dedupes(authed_client: TestClient) -> None:
         }
     )
     with (
-        patch("app_options.api.routes_polymarket.Database.session_context") as ctx,
-        patch("app_options.api.routes_polymarket.GammaClient") as gamma_cls,
+        patch("volta.api.routes_polymarket.Database.session_context") as ctx,
+        patch("volta.api.routes_polymarket.GammaClient") as gamma_cls,
     ):
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -97,7 +97,7 @@ def test_import_polymarket_events_dedupes(authed_client: TestClient) -> None:
 def test_import_polymarket_events_max_cap(authed_client: TestClient) -> None:
     existing = {f"event-{i}" for i in range(10)}
     mock_db = _mock_db({"list_polymarket_event_slugs": AsyncMock(return_value=existing)})
-    with patch("app_options.api.routes_polymarket.Database.session_context") as ctx:
+    with patch("volta.api.routes_polymarket.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         resp = authed_client.post(
@@ -134,7 +134,7 @@ def test_chart_batch_pm_event_slug(authed_client: TestClient) -> None:
     }
     mock_get = AsyncMock(return_value=batch)
     mock_db = _mock_db({"get_chart_batch": mock_get})
-    with patch("app_options.api.routes_candles.Database.session_context") as ctx:
+    with patch("volta.api.routes_candles.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         resp = authed_client.get(

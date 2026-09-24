@@ -1,6 +1,6 @@
 """Tests for Polymarket strike selection."""
 
-from app_options.polymarket.gamma_client import parse_event_end_date, select_strike_markets
+from volta.polymarket.gamma_client import parse_event_end_date, select_strike_markets
 
 
 def test_parse_event_end_date() -> None:

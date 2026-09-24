@@ -8,13 +8,13 @@ Browser -> nginx:80 (host :8081 dev) -> FastAPI:8000 -> PostgreSQL
 IngestorOperator -> unicex (Bybit REST) -> SnapshotWriter -> PostgreSQL
 ```
 
-UI-бренд: **Volta**. Python-пакет и cookie session: `app_options` / `app_options_session`.
+UI-бренд: **Volta**. Python-пакет и cookie session: `volta` / `volta_session`.
 
 ## Компоненты
 
 ### api (FastAPI)
 
-- `app_options/__main__.py` — lifespan, SessionMiddleware, AuthMiddleware, title `Volta`
+- `volta/__main__.py` — lifespan, SessionMiddleware, AuthMiddleware, title `Volta`
 - Роуты: auth, chart/candles, meta, options (`routes_options.py`), polymarket
 - Ingestor запускается в `lifespan` через `IngestorOperator`
 - Порт **8000** только внутри docker network; на host не публикуется
@@ -105,7 +105,7 @@ Project name: `volta`. Container names: `volta-postgres`, `volta-api`, `volta-ng
 - `proxy_network` (external) — только `volta-nginx`; edge Traefik маршрутизирует `volta.dmitryrod.ru` → `http://volta-nginx:80`
 - **Без** Traefik labels на контейнерах Volta (конфиг на edge)
 
-Альтернатива: если на хосте уже есть `apps_network` (как у money-pulso), замените `proxy_network` на `apps_network` в `docker-compose.prod.yaml` и в Traefik.
+Альтернатива: если на хосте уже есть `apps_network`, замените `proxy_network` на `apps_network` в `docker-compose.prod.yaml` и в Traefik.
 
 ## unicex
 

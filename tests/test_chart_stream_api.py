@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app_options.__main__ import app
+from volta.__main__ import app
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def test_chart_stream_requires_auth(client: TestClient) -> None:
 
 def test_chart_stream_invalid_base(client: TestClient) -> None:
     with patch(
-        "app_options.auth.middleware.is_authenticated_session",
+        "volta.auth.middleware.is_authenticated_session",
         return_value=True,
     ):
         response = client.get("/api/chart/stream?base=INVALID&interval=5m")

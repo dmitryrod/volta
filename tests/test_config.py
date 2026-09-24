@@ -1,7 +1,7 @@
 """Unit tests for config and auth."""
 
-from app_options.auth.session import verify_credentials
-from app_options.config.assets import validate_base
+from volta.auth.session import verify_credentials
+from volta.config.assets import validate_base
 
 
 def test_validate_base_ok() -> None:

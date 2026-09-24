@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-22
+
+### Changed
+
+- Удалён money-pulso screener (`app/`); репозиторий содержит только Volta
+- Python-пакет переименован: `app_options` → `volta` (импорты, hatch, Docker COPY/volumes, uvicorn module)
+- Session cookie: `app_options_session` → `volta_session` (пользователи перелогинятся)
+
 ## Unreleased
 
 ### Changed
@@ -9,7 +17,7 @@
 
 ### Changed
 
-- Rebrand UI: **Volta** (toolbar, login, page titles, FastAPI title); Python package остаётся `app_options`
+- Rebrand UI: **Volta** (toolbar, login, page titles, FastAPI title); пакет позже переименован в `volta` (см. 2026-09-22)
 - Docker dev: project `volta`, nginx host port `${VOLTA_HTTP_PORT:-8081}`, postgres host port только с `--profile dev-tools` (`${VOLTA_POSTGRES_PORT:-5436}`)
 - Docker prod: `docker-compose.prod.yaml` — без host ports, nginx на `proxy_network`, `nginx.prod.conf` для `volta.dmitryrod.ru`
 - `.env.example`: `VOLTA_HTTP_PORT`, `VOLTA_POSTGRES_PORT`, `PUBLIC_URL`

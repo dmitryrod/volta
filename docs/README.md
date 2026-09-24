@@ -4,8 +4,9 @@
 
 ## Быстрый старт
 
+Из корня репозитория:
+
 ```text
-cd app-options
 cp .env.example .env
 # отредактируйте PANEL_PASSWORD и CYPHER_KEY
 docker compose --env-file .env up --build -d
@@ -21,11 +22,13 @@ Prod URL (через edge Traefik): `PUBLIC_URL` в `.env`, по умолчан�
 
 | Путь | Назначение |
 |------|------------|
-| `app_options/` | Python-пакет (FastAPI, ingestor, auth) — имя пакета не менялось |
+| `volta/` | Python-пакет (FastAPI, ingestor, auth) |
 | `frontend/static/` | CSS/JS для панели |
 | `nginx/` | Reverse proxy (dev: `nginx.conf`, prod: `nginx.prod.conf`) |
 | `alembic/` | Миграции PostgreSQL |
 | `docs/` | Документация |
+| `docker-compose.yaml` | Dev stack (postgres, api, nginx) |
+| `docker-compose.prod.yaml` | Prod stack |
 
 ## Документация
 
@@ -45,18 +48,13 @@ Prod URL (через edge Traefik): `PUBLIC_URL` в `.env`, по умолчан�
 | `VOLTA_POSTGRES_PORT` | Host-порт postgres с `--profile dev-tools` (default 5436) |
 | `PUBLIC_URL` | Публичный URL панели (prod) |
 
-## Вынос из monorepo
+## Prod
 
-Volta живёт в каталоге `app-options/` репозитория money-pulso как **автономный стек** (свой compose, nginx, postgres, docs). Python-пакет остаётся `app_options`; UI-бренд — **Volta**.
+```text
+docker compose -f docker-compose.prod.yaml up -d --build
+```
 
-Для отдельного репозитория:
-
-1. Скопировать каталог `app-options/` целиком.
-2. Обновить CI/CD и secrets (`.env`, не коммитить).
-3. Prod: `docker compose -f docker-compose.prod.yaml up -d --build` на хосте с external network `proxy_network` (или переименовать в `apps_network` — см. ARCHITECTURE).
-4. Edge Traefik: маршрут `Host(\`volta.dmitryrod.ru\`)` → `volta-nginx:80` (пример в troubleshooting).
-
-Связи с money-pulso screener (`app/`) нет — только общий git monorepo на время миграции.
+Нужна external network `proxy_network` (или `apps_network` — см. ARCHITECTURE). Edge Traefik: маршрут `Host(\`volta.dmitryrod.ru\`)` → `volta-nginx:80` (пример в troubleshooting).
 
 ## Ограничения MVP
 

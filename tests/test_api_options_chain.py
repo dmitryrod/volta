@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app_options.__main__ import app
+from volta.__main__ import app
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def client() -> TestClient:
 @pytest.fixture
 def authed_client(client: TestClient) -> TestClient:
     with patch(
-        "app_options.auth.middleware.is_authenticated_session",
+        "volta.auth.middleware.is_authenticated_session",
         return_value=True,
     ):
         yield client
@@ -48,7 +48,7 @@ def test_options_chain_200(authed_client: TestClient) -> None:
         "puts": [],
     }
     mock_db = _mock_db({"get_options_chain": AsyncMock(return_value=chain)})
-    with patch("app_options.api.routes_options.Database.session_context") as ctx:
+    with patch("volta.api.routes_options.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         resp = authed_client.get("/api/options/chain?base=ETH")
@@ -86,7 +86,7 @@ def test_chart_batch_with_symbols(authed_client: TestClient) -> None:
     }
     mock_get = AsyncMock(return_value=batch)
     mock_db = _mock_db({"get_chart_batch": mock_get})
-    with patch("app_options.api.routes_candles.Database.session_context") as ctx:
+    with patch("volta.api.routes_candles.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         resp = authed_client.get(
@@ -111,7 +111,7 @@ def test_chart_batch_passes_from_param(authed_client: TestClient) -> None:
     }
     mock_get = AsyncMock(return_value=batch)
     mock_db = _mock_db({"get_chart_batch": mock_get})
-    with patch("app_options.api.routes_candles.Database.session_context") as ctx:
+    with patch("volta.api.routes_candles.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         resp = authed_client.get("/api/chart/batch?base=ETH&from=1725800000")
@@ -130,7 +130,7 @@ def test_chart_batch_without_symbols(authed_client: TestClient) -> None:
     }
     mock_get = AsyncMock(return_value=batch)
     mock_db = _mock_db({"get_chart_batch": mock_get})
-    with patch("app_options.api.routes_candles.Database.session_context") as ctx:
+    with patch("volta.api.routes_candles.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         resp = authed_client.get("/api/chart/batch?base=ETH")
@@ -155,7 +155,7 @@ def test_candles_option_series(authed_client: TestClient) -> None:
         )
     )
     mock_db = _mock_db({"aggregate_option_series": mock_agg})
-    with patch("app_options.api.routes_candles.Database.session_context") as ctx:
+    with patch("volta.api.routes_candles.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         resp = authed_client.get(
@@ -198,7 +198,7 @@ def test_panel_latest_includes_options_expiry(authed_client: TestClient) -> None
             ),
         }
     )
-    with patch("app_options.api.routes_candles.Database.session_context") as ctx:
+    with patch("volta.api.routes_candles.Database.session_context") as ctx:
         ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         ctx.return_value.__aexit__ = AsyncMock(return_value=None)
         resp = authed_client.get("/api/panel/latest?base=ETH")

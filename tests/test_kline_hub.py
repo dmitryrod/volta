@@ -2,7 +2,7 @@
 
 import pytest
 
-from app_options.ingestor.kline_hub import KlineHub, LiveCandle, current_bucket_open_time
+from volta.ingestor.kline_hub import KlineHub, LiveCandle, current_bucket_open_time
 
 
 def test_merge_series_with_live_appends_new_bar() -> None:

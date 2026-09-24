@@ -16,7 +16,7 @@ COPY pyproject.toml README.MD alembic.ini uv.lock /app/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-install-project --no-dev
 
-COPY app_options /app/app_options
+COPY volta /app/volta
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
@@ -31,6 +31,6 @@ ENV PATH="/app/.venv/bin:$PATH" \
 
 COPY --from=builder /app/.venv /app/.venv
 COPY pyproject.toml README.MD alembic.ini uv.lock /app/
-COPY app_options /app/app_options
+COPY volta /app/volta
 COPY alembic /app/alembic
 COPY frontend /app/frontend

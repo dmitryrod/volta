@@ -43,13 +43,13 @@ services:
         condition: service_healthy
     volumes:
       - ./frontend/static:/app/frontend/static:ro
-      - ./app_options/templates:/app/app_options/templates:ro
+      - ./volta/templates:/app/volta/templates:ro
     command:
       - sh
       - -c
       - |
         alembic upgrade head
-        uvicorn app_options.__main__:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*
+        uvicorn volta.__main__:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*
     restart: always
     networks:
       - volta_internal

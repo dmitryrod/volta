@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app_options.database.models import AssetConfig
-from app_options.ingestor.kline_backfill import KlineBackfillService
+from volta.database.models import AssetConfig
+from volta.ingestor.kline_backfill import KlineBackfillService
 
 
 @pytest.mark.asyncio
@@ -32,7 +32,7 @@ async def test_run_for_assets_awaits_uni_client_create() -> None:
     ]
 
     with patch(
-        "app_options.ingestor.kline_backfill.get_uni_client",
+        "volta.ingestor.kline_backfill.get_uni_client",
         return_value=mock_factory,
     ):
         service = KlineBackfillService()
